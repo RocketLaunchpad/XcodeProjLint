@@ -26,6 +26,9 @@ import PackageDescription
 
 let package = Package(
     name: "XcodeProjLint",
+    products: [
+    	.executable(name: "XcodeProjLint", targets: ["XcodeProjLint"]),
+    ],
     dependencies: [
         .package(url: "https://github.com/tuist/xcodeproj.git", .upToNextMajor(from: "7.5.0"))
     ],
