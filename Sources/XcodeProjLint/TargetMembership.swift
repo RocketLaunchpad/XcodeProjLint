@@ -30,7 +30,7 @@ import XcodeProj
 /**
  A data structure containing the targets found in the project and a list of paths associated with each target.
  */
-class TargetMembership: Encodable {
+class TargetMembership: Encodable, CustomDebugStringConvertible {
 
     private let storage: [String: [Path]]
 
@@ -46,7 +46,7 @@ class TargetMembership: Encodable {
 
             try target.buildPhases.forEach { buildPhase in
                 try buildPhase.files?.forEach { buildFile in
-                    if let fullPath = try buildFile.file?.fullPath(sourceRoot: sourceRoot) {
+                    if let fullPath = try buildFile.file?.fullPath(sourceRoot: sourceRoot), Constants.includeExtensions.contains(fullPath.extension) {
                         storage[target.name]?.append(fullPath)
                     }
                 }
@@ -68,13 +68,10 @@ class TargetMembership: Encodable {
         return storage.keys.sorted()
     }
 
-    var description: String {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
-
-        guard let data = try? encoder.encode(storage), let string = String(data: data, encoding: .utf8) else {
-            return storage.description
+    var debugDescription: String {
+        return targetNames.map {
+            OutputFormatter.format(prefix: "[Membership]", target: $0, paths: paths(forTargetName: $0))
         }
-        return string
+        .joined(separator: "\n")
     }
 }

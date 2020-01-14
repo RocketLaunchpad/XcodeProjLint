@@ -28,10 +28,14 @@ import PathKit
 
 class Validator {
 
-    static func validate(targetMembership: TargetMembership, specs: [MemberSpec]) -> Bool {
+    static func validate(targetMembership: TargetMembership, specs: [MemberSpec], debug: Bool = false) -> Bool {
+        if debug {
+            print(targetMembership.debugDescription)
+        }
+
         var result = true
         specs.forEach {
-            if !validate(targetMembership: targetMembership, spec: $0) {
+            if !validate(targetMembership: targetMembership, spec: $0, debug: debug) {
                 result = false
             }
         }
@@ -39,9 +43,13 @@ class Validator {
         return result
     }
 
-    private static func validate(targetMembership: TargetMembership, spec: MemberSpec) -> Bool {
+    private static func validate(targetMembership: TargetMembership, spec: MemberSpec, debug: Bool) -> Bool {
+        if debug {
+            print(spec.debugDescription)
+        }
+
         guard targetMembership.targetNames.contains(spec.targetName) else {
-            print("Error: Project does not contain a target named \"\(spec.targetName)\"", to: &stderr)
+            reportError(message: "Project does not contain a target named \"\(spec.targetName)\"")
             return false
         }
 
@@ -55,27 +63,30 @@ class Validator {
 
             let notInSpec = projectFiles.subtracting(specFiles)
             if !notInSpec.isEmpty {
-                print("Unexpected files in target \"\(spec.targetName)\":", to: &stderr)
-                print(formatted(paths: notInSpec), to: &stderr)
+                notInSpec.sorted().forEach {
+                    reportError(in: $0, message: "\($0.lastComponent) should not be included in target \"\(spec.targetName)\"")
+                }
             }
 
             let notInProject = specFiles.subtracting(projectFiles)
             if !notInProject.isEmpty {
-                print("Missing files expected in target \"\(spec.targetName)\":", to: &stderr)
-                print(formatted(paths: notInProject), to: &stderr)
+                notInProject.sorted().forEach {
+                    reportError(in: $0, message: "\($0.lastComponent) should be included in target \"\(spec.targetName)\"")
+                }
             }
         }
         catch {
-            print("Error: \(error)")
+            reportError(message: error.localizedDescription)
         }
 
         return false
     }
 
-    private static func formatted<T>(paths: T) -> String where T: Sequence, T.Element == Path {
-        return paths.sorted().map({ path -> String in
-            "  \(path)"
-        })
-        .joined(separator: "\n")
+    private static func reportError(message: String) {
+        print(OutputFormatter.formatError(message: message), to: &stderr)
+    }
+
+    private static func reportError(in path: Path, line: Int = 1, message: String) {
+        print(OutputFormatter.formatError(in: path, line: line, message: message), to: &stderr)
     }
 }

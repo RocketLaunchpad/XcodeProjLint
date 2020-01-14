@@ -26,7 +26,7 @@
 import Foundation
 import PathKit
 
-struct MemberSpec: Codable {
+struct MemberSpec: Codable, CustomDebugStringConvertible {
 
     var targetName: String
 
@@ -43,14 +43,22 @@ struct MemberSpec: Codable {
             return try $0.recursiveChildren()
         }
         .filter {
-            return !$0.isDirectory
+            if $0.isDirectory {
+                // Only include xcasset directories
+                return $0.extension == "xcassets"
+            }
+            return true
         }
         .filter {
-            return ["swift", "m"].contains($0.extension)
+            return Constants.includeExtensions.contains($0.extension)
         }
     }
 
     static func read(from path: Path) throws -> [MemberSpec] {
         return try JSONDecoder().decode([MemberSpec].self, from: try Data(contentsOf: path.url))
+    }
+
+    var debugDescription: String {
+        return OutputFormatter.format(prefix: "[Spec]", target: targetName, paths: try! sourcePaths())
     }
 }
