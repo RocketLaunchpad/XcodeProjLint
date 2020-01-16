@@ -28,14 +28,17 @@ import PathKit
 
 class Validator {
 
-    static func validate(targetMembership: TargetMembership, specs: [MemberSpec], debug: Bool = false) -> Bool {
+    static func validate(targetMembership: TargetMembership,
+                         specs: [MemberSpec],
+                         specPath: Path,
+                         debug: Bool = false) -> Bool {
         if debug {
             print(targetMembership.debugDescription)
         }
 
         var result = true
         specs.forEach {
-            if !validate(targetMembership: targetMembership, spec: $0, debug: debug) {
+            if !validate(targetMembership: targetMembership, spec: $0, specPath: specPath, debug: debug) {
                 result = false
             }
         }
@@ -43,7 +46,11 @@ class Validator {
         return result
     }
 
-    private static func validate(targetMembership: TargetMembership, spec: MemberSpec, debug: Bool) -> Bool {
+    private static func validate(targetMembership: TargetMembership,
+                                 spec: MemberSpec,
+                                 specPath: Path,
+                                 debug: Bool) -> Bool {
+
         if debug {
             print(spec.debugDescription)
         }
@@ -55,7 +62,7 @@ class Validator {
 
         do {
             let projectFiles = Set(targetMembership.paths(forTargetName: spec.targetName).map { $0.absolute() })
-            let specFiles = Set(try spec.sourcePaths().map { $0.absolute() })
+            let specFiles = Set(try spec.sourcePaths(relativeTo: specPath.parent()).map { $0.absolute() })
 
             if projectFiles == specFiles {
                 return true

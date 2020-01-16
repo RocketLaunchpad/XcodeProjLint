@@ -27,17 +27,20 @@ import Foundation
 import PathKit
 import XcodeProj
 
+let debug = false
+
 func main(args: [String]) throws -> Int32 {
     guard args.count == 3 else {
         let bin = (args[0] as NSString).lastPathComponent
         print("Usage: \(bin) <project> <spec-file>", to: &stderr)
         return 1
     }
-    
-    return
-        Validator.validate(targetMembership: try TargetMembership(projectPath: Path(args[1])),
-                           specs: try MemberSpec.read(from: Path(args[2])))
-            ? 0 : 1
+
+    let membership = try TargetMembership(projectPath: Path(args[1]))
+    let specPath = Path(args[2])
+    let specs = try MemberSpec.read(from: specPath)
+
+    return Validator.validate(targetMembership: membership, specs: specs, specPath: specPath, debug: debug) ? 0 : 1
 }
 
 do {

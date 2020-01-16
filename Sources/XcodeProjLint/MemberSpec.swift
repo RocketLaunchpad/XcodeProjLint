@@ -32,14 +32,14 @@ struct MemberSpec: Codable, CustomDebugStringConvertible {
 
     var sourceRoots: [String]
 
-    private var sourceRootPaths: [Path] {
-        return sourceRoots.flatMap {
-            Path.glob($0)
+    private func sourceRootPaths(relativeTo specRoot: Path) -> [Path] {
+        return sourceRoots.map {
+            return specRoot + Path($0)
         }
     }
 
-    func sourcePaths() throws -> [Path] {
-        return try sourceRootPaths.flatMap {
+    func sourcePaths(relativeTo specRoot: Path) throws -> [Path] {
+        return try sourceRootPaths(relativeTo: specRoot).flatMap {
             return try $0.recursiveChildren()
         }
         .filter {
@@ -59,6 +59,6 @@ struct MemberSpec: Codable, CustomDebugStringConvertible {
     }
 
     var debugDescription: String {
-        return OutputFormatter.format(prefix: "[Spec]", target: targetName, paths: try! sourcePaths())
+        return OutputFormatter.format(prefix: "[Spec]", target: targetName, paths: sourceRoots.map { Path($0) })
     }
 }
